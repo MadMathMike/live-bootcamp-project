@@ -1,6 +1,5 @@
-use axum::response::IntoResponse;
-use reqwest::StatusCode;
+use axum::{http::StatusCode, response::IntoResponse};
 
-pub async fn logout_handler() -> impl IntoResponse {
+pub async fn logout() -> impl IntoResponse {
     StatusCode::OK.into_response()
 }
