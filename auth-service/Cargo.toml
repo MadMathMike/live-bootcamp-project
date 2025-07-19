@@ -9,3 +9,7 @@ edition = "2021"
 axum = "0.7.4"
 tokio = { version = "1.36", features = ["full"] }
 tower-http = { version = "0.5.0", features = ["fs"] }
+# TODO: Move this dependency back to the dev-dependencies section once it is no longer used in lib.rs
+reqwest = { version = "0.12.22", features = ["json"], default-features = false }
+
+[dev-dependencies]
