@@ -5,6 +5,8 @@ use routes::{login, logout, signup, verify_2fa, verify_token};
 use tower_http::services::ServeDir;
 
 mod routes;
+mod domain;
+mod services;
 
 pub struct Application {
     server: Serve<Router, Router>,
