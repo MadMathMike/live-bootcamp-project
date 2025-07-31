@@ -2,6 +2,7 @@
 pub struct Email(String);
 
 impl Email {
+    // TODO: return Option<T> instead
     pub fn parse(email: String) -> Result<Email, ()> {
         if email.is_empty() || !email.contains("@") {
             Err(())

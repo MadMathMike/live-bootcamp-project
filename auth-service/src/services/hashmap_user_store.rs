@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::domain::{Email, User, UserStore, UserStoreError};
+use crate::domain::{Email, Password, User, UserStore, UserStoreError};
 
 #[derive(Default)]
 pub struct HashmapUserStore {
@@ -26,14 +26,14 @@ impl UserStore for HashmapUserStore {
         }
     }
 
-    async fn validate_user(&self, email: &Email, password: &str) -> Result<(), UserStoreError> {
+    async fn validate_user(&self, email: &Email, password: &Password) -> Result<(), UserStoreError> {
         if !self.users.contains_key(email) {
             return Err(UserStoreError::UserNotFound)
         } 
         
         let user = &self.users[email];
 
-        if password != user.password {
+        if password != &user.password {
             Err(UserStoreError::InvalidCredentials)
         } else {
             Ok(())
@@ -53,7 +53,8 @@ mod tests {
 
         // First time user is added should return Ok(())
         let email = Email::parse("blah@".to_owned()).unwrap();
-        let user = User::new(email, "blah".to_owned(), false);
+        let password = Password::parse("password1234".to_owned()).unwrap();
+        let user = User::new(email, password, false);
         let result = store.add_user(user.clone()).await;
         assert!(result.is_ok());
 
@@ -70,7 +71,8 @@ mod tests {
         let mut store = HashmapUserStore::default();
 
         let email = Email::parse("blah@".to_owned()).unwrap();
-        let user = User::new(email.clone(), "blah".to_owned(), false);
+        let password = Password::parse("password1234".to_owned()).unwrap();
+        let user = User::new(email.clone(), password.clone(), false);
 
         let user_result = store.get_user(&email).await;
         assert!(user_result.is_err());
@@ -91,7 +93,7 @@ mod tests {
         let mut store = HashmapUserStore::default();
 
         let email = Email::parse("blah@".to_owned()).unwrap();
-        let password = "blah".to_owned();
+        let password = Password::parse("password1234".to_owned()).unwrap();
         
         let validation_result = store.validate_user(&email, &password).await;
         assert!(validation_result.is_err());
@@ -102,7 +104,8 @@ mod tests {
         let result = store.add_user(user.clone()).await;
         assert!(result.is_ok());
 
-        let validation_result = store.validate_user(&email, "wrong password").await;
+        let wrong_password = Password::parse("wrong password".to_owned()).unwrap();
+        let validation_result = store.validate_user(&email, &wrong_password).await;
         assert!(validation_result.is_err());
         let err = validation_result.err().unwrap();
         assert_eq!(UserStoreError::InvalidCredentials, err);
