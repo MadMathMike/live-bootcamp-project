@@ -2,12 +2,11 @@
 pub struct Password(String);
 
 impl Password {
-    // TODO: return Option<T> instead
-    pub fn parse(password: String) -> Result<Password, ()> {
+    pub fn parse(password: String) -> Option<Password> {
         if password.chars().count() < 8 {
-            Err(())
+            None
         } else {
-            Ok(Password(password))
+            Some(Password(password))
         }
     }
 }
