@@ -5,8 +5,6 @@ use auth_service::{utils::JWT_COOKIE_NAME, ErrorResponse};
 async fn should_return_422_if_malformed_credentials() {
     let app = TestApp::new().await;
 
-    // TODO: add a valid user to the test app first?
-
     let test_cases = [
         // empty JSON
         serde_json::json!({}),
