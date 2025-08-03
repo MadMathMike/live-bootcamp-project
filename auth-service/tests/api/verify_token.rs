@@ -1,4 +1,4 @@
-use auth_service::{domain::Email, utils::generate_auth_cookie, ErrorResponse};
+use auth_service::{domain::{BannedTokenStore, Email}, utils::generate_auth_cookie, ErrorResponse};
 
 use crate::helpers::TestApp;
 
@@ -44,6 +44,23 @@ async fn should_return_401_if_invalid_token() {
             .error,
         "Unauthorized".to_owned()
     );
+}
+
+#[tokio::test]
+async fn should_return_401_if_banned_token() {
+    let app = TestApp::new().await;
+
+    let email = Email::parse(String::from("test@example.com")).unwrap();
+    let cookie = generate_auth_cookie(&email).unwrap();
+    let token = cookie.value();
+
+    app.banned_token_store.write().await.add_token(token.to_owned()).await.unwrap();
+
+    let body = serde_json::json!({
+        "token": token
+    });
+    let response = app.post_verify_token(&body).await;
+    assert_eq!(response.status().as_u16(), 401);
 }
 
 #[tokio::test]

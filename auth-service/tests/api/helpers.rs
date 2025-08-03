@@ -3,21 +3,23 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use auth_service::{
-    app_state::AppState, services::hashmap_user_store::HashmapUserStore, utils::test, Application
+    app_state::AppState, services::{hashmap_user_store::HashmapUserStore, hashset_banned_token_store::HashSetBannedTokenStore}, utils::test, Application
 };
 
 use uuid::Uuid;
 
 pub struct TestApp {
     pub address: String,
-    pub cookie_jar: Arc<Jar>, // New!
+    pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
+    pub banned_token_store: Arc<RwLock<HashSetBannedTokenStore>>
 }
 
 impl TestApp {
     pub async fn new() -> Self {
         let user_store = Arc::new(RwLock::new(HashmapUserStore::default()));
-        let app_state = AppState::new(user_store);
+        let banned_token_store = Arc::new(RwLock::new(HashSetBannedTokenStore::default()));
+        let app_state = AppState::new(user_store, banned_token_store.clone());
 
         let app = Application::build(app_state, test::APP_ADDRESS)
             .await
@@ -27,8 +29,6 @@ impl TestApp {
 
         #[allow(clippy::let_underscore_future)]
         let _ = tokio::spawn(app.run());
-
-        let http_client = reqwest::Client::new();
 
         let cookie_jar = Arc::new(Jar::default());
         let http_client = reqwest::Client::builder()
@@ -40,12 +40,13 @@ impl TestApp {
             address,
             cookie_jar,
             http_client,
+            banned_token_store,
         }
     }
 
     pub async fn get_root(&self) -> reqwest::Response {
         self.http_client
-            .get(&format!("{}/", &self.address))
+            .get(format!("{}/", &self.address))
             .send()
             .await
             .expect("Failed to execute request.")
@@ -56,7 +57,7 @@ impl TestApp {
         Body: serde::Serialize,
     {
         self.http_client
-            .post(&format!("{}/signup", &self.address))
+            .post(format!("{}/signup", &self.address))
             .json(body)
             .send()
             .await
@@ -68,7 +69,7 @@ impl TestApp {
         Body: serde::Serialize,
     {
         self.http_client
-            .post(&format!("{}/login", &self.address))
+            .post(format!("{}/login", &self.address))
             .json(body)
             .send()
             .await

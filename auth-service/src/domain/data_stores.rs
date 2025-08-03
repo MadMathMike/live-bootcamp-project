@@ -15,3 +15,14 @@ pub enum UserStoreError {
     InvalidCredentials,
     UnexpectedError,
 }
+
+// TODO: Consider creating a strong type for Tokens.
+// There isn't much value in an arbitrary string store. It should probably only store actual JWT tokens.
+#[async_trait::async_trait]
+pub trait BannedTokenStore {
+    async fn add_token(&mut self, token: String) -> Result<(), BannedTokenStoreError>;
+    async fn is_banned(&self, token: &str) -> Result<bool, BannedTokenStoreError>;
+}
+
+#[derive(Debug)]
+pub enum BannedTokenStoreError {}

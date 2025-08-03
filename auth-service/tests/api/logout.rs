@@ -1,5 +1,5 @@
 use auth_service::{
-    domain::Email,
+    domain::{BannedTokenStore, Email},
     utils::{constants::JWT_COOKIE_NAME, generate_auth_cookie},
     ErrorResponse,
 };
@@ -53,12 +53,20 @@ async fn should_return_200_if_valid_jwt_cookie() {
 
     let email = Email::parse(String::from("test@example.com")).unwrap();
     let cookie = generate_auth_cookie(&email).unwrap();
-    let cookie = &format!("{JWT_COOKIE_NAME}={}", cookie.value());
+    let cookie_str = cookie.value();
+    let cookie = &format!("{JWT_COOKIE_NAME}={}", cookie_str);
     let url = &Url::parse("http://127.0.0.1").expect("Failed to parse URL");
     app.cookie_jar.add_cookie_str(cookie, url);
 
     let response = app.post_logout().await;
     assert_eq!(response.status().as_u16(), 200);
+
+    let banned_token_store = app.banned_token_store.read().await;
+    let is_banned_result = banned_token_store.is_banned(cookie_str).await;
+    assert!(is_banned_result.is_ok());
+
+    let banned = is_banned_result.unwrap();
+    assert!(banned);
 }
 
 #[tokio::test]
