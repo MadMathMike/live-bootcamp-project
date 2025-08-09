@@ -66,7 +66,16 @@ async fn handle_2fa(
         return (jar, Err(AuthAPIError::UnexpectedError));
     }
 
-    let response = Json::from(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
+    let send_email_results = state
+        .email_client
+        .send_email(email, "2FA Code", two_fa_code.as_ref())
+        .await;
+
+    if send_email_results.is_err() {
+        return (jar, Err(AuthAPIError::UnexpectedError));
+    }
+
+    let response = Json(LoginResponse::TwoFactorAuth(TwoFactorAuthResponse {
         message: "2FA required".to_owned(),
         login_attempt_id: login_attempt_id.as_ref().to_owned(),
     }));
