@@ -1,5 +1,5 @@
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
-use axum_extra::extract::CookieJar;
+use axum_extra::extract::{cookie, CookieJar};
 
 use crate::{
     app_state::AppState,
@@ -8,28 +8,35 @@ use crate::{
 };
 
 pub async fn logout(
-    jar: CookieJar,
     State(state): State<AppState>,
+    jar: CookieJar,
 ) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {
-    let cookie = jar.get(JWT_COOKIE_NAME);
-    if cookie.is_none() {
-        return (jar, Err(AuthAPIError::MissingToken));
-    }
-    let cookie = cookie.unwrap();
+    let cookie = match jar.get(JWT_COOKIE_NAME) {
+        Some(cookie) => cookie,
+        None => return (jar, Err(AuthAPIError::MissingToken)),
+    };
 
+    // Validate token
     let token = cookie.value().to_owned();
+    let _ = match validate_token(&token, state.banned_token_store.clone()).await {
+        Ok(claims) => claims,
+        Err(_) => return (jar, Err(AuthAPIError::InvalidToken)),
+    };
 
-    let token_validation = validate_token(state.banned_token_store.clone(), &token).await;
-
-    if token_validation.is_err() {
-        return (jar, Err(AuthAPIError::InvalidToken));
+    // Add token to banned list
+    if state
+        .banned_token_store
+        .write()
+        .await
+        .add_token(token.to_owned())
+        .await
+        .is_err()
+    {
+        return (jar, Err(AuthAPIError::UnexpectedError));
     }
 
-    let jar = jar.remove(JWT_COOKIE_NAME);
-
-    let mut banned_token_store = state.banned_token_store.write().await;
-    // TODO: If we fail to add the token to the banned token store, should logout fail?
-    let _ = banned_token_store.add_token(token).await;
+    // Remove jwt cookie
+    let jar = jar.remove(cookie::Cookie::from(JWT_COOKIE_NAME));
 
     (jar, Ok(StatusCode::OK))
 }

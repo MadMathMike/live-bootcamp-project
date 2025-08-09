@@ -28,14 +28,11 @@ impl Application {
     pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
         let allowed_origins = [
             "http://localhost:8000".parse()?,
-            // TODO: Replace [YOUR_DROPLET_IP] with your Droplet IP address
             "http://[YOUR_DROPLET_IP]:8000".parse()?,
         ];
 
         let cors = CorsLayer::new()
-            // Allow GET and POST requests
             .allow_methods([Method::GET, Method::POST])
-            // Allow cookies to be included in requests
             .allow_credentials(true)
             .allow_origin(allowed_origins);
 
@@ -72,12 +69,14 @@ impl IntoResponse for AuthAPIError {
         let (status, error_message) = match self {
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
             AuthAPIError::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),
-            AuthAPIError::IncorrectCredentials => (StatusCode::UNAUTHORIZED, "Unauthorized"),
+            AuthAPIError::IncorrectCredentials => {
+                (StatusCode::UNAUTHORIZED, "Incorrect credentials")
+            }
+            AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing auth token"),
+            AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid auth token"),
             AuthAPIError::UnexpectedError => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
             }
-            AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing auth token"),
-            AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Unauthorized"),
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),

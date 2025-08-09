@@ -3,7 +3,12 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use auth_service::{
-    app_state::AppState, services::{hashmap_user_store::HashmapUserStore, hashset_banned_token_store::HashSetBannedTokenStore}, utils::test, Application
+    app_state::{AppState, BannedTokenStoreType},
+    services::{
+        hashmap_user_store::HashmapUserStore, hashset_banned_token_store::HashsetBannedTokenStore,
+    },
+    utils::constants::test,
+    Application,
 };
 
 use uuid::Uuid;
@@ -11,14 +16,14 @@ use uuid::Uuid;
 pub struct TestApp {
     pub address: String,
     pub cookie_jar: Arc<Jar>,
+    pub banned_token_store: BannedTokenStoreType,
     pub http_client: reqwest::Client,
-    pub banned_token_store: Arc<RwLock<HashSetBannedTokenStore>>
 }
 
 impl TestApp {
     pub async fn new() -> Self {
         let user_store = Arc::new(RwLock::new(HashmapUserStore::default()));
-        let banned_token_store = Arc::new(RwLock::new(HashSetBannedTokenStore::default()));
+        let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::default()));
         let app_state = AppState::new(user_store, banned_token_store.clone());
 
         let app = Application::build(app_state, test::APP_ADDRESS)
@@ -39,14 +44,14 @@ impl TestApp {
         Self {
             address,
             cookie_jar,
-            http_client,
             banned_token_store,
+            http_client,
         }
     }
 
     pub async fn get_root(&self) -> reqwest::Response {
         self.http_client
-            .get(format!("{}/", &self.address))
+            .get(&format!("{}/", &self.address))
             .send()
             .await
             .expect("Failed to execute request.")
@@ -57,7 +62,7 @@ impl TestApp {
         Body: serde::Serialize,
     {
         self.http_client
-            .post(format!("{}/signup", &self.address))
+            .post(&format!("{}/signup", &self.address))
             .json(body)
             .send()
             .await
@@ -69,7 +74,7 @@ impl TestApp {
         Body: serde::Serialize,
     {
         self.http_client
-            .post(format!("{}/login", &self.address))
+            .post(&format!("{}/login", &self.address))
             .json(body)
             .send()
             .await
