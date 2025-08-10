@@ -41,8 +41,8 @@ pub async fn login(
 }
 
 async fn handle_2fa(
-    email: &Email,    // New!
-    state: &AppState, // New!
+    email: &Email,
+    state: &AppState,
     jar: CookieJar,
 ) -> (
     CookieJar,
