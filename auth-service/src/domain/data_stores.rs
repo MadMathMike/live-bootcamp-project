@@ -55,8 +55,9 @@ pub struct LoginAttemptId(String);
 
 impl LoginAttemptId {
     pub fn parse(id: String) -> Result<Self, String> {
-        uuid::Uuid::parse_str(&id).map_err(|_| "Invalid UUID")?;
-        Ok(Self(id))
+        let parsed_id =
+            uuid::Uuid::parse_str(&id).map_err(|_| "Invalid login attempt id".to_owned())?;
+        Ok(Self(parsed_id.to_string()))
     }
 }
 
@@ -80,7 +81,7 @@ impl TwoFACode {
         if code.len() == 6 && code.chars().all(|c| c.is_numeric()) {
             Ok(TwoFACode(code))
         } else {
-            Err(String::from("Invalid 2FA Code"))
+            Err("Invalid 2FA code".to_owned())
         }
     }
 }

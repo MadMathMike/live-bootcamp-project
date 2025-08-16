@@ -51,27 +51,23 @@ async fn handle_2fa(
     let login_attempt_id = LoginAttemptId::default();
     let two_fa_code = TwoFACode::default();
 
-    let result = state
+    if state
         .two_fa_code_store
         .write()
         .await
-        .add_code(
-            email.to_owned(),
-            login_attempt_id.clone(),
-            two_fa_code.clone(),
-        )
-        .await;
-
-    if result.is_err() {
+        .add_code(email.clone(), login_attempt_id.clone(), two_fa_code.clone())
+        .await
+        .is_err()
+    {
         return (jar, Err(AuthAPIError::UnexpectedError));
     }
 
-    let send_email_results = state
+    if state
         .email_client
         .send_email(email, "2FA Code", two_fa_code.as_ref())
-        .await;
-
-    if send_email_results.is_err() {
+        .await
+        .is_err()
+    {
         return (jar, Err(AuthAPIError::UnexpectedError));
     }
 
@@ -99,7 +95,7 @@ async fn handle_no_2fa(
 
     (
         updated_jar,
-        Ok((StatusCode::OK, Json::from(LoginResponse::RegularAuth))),
+        Ok((StatusCode::OK, Json(LoginResponse::RegularAuth))),
     )
 }
 
@@ -109,8 +105,6 @@ pub struct LoginRequest {
     password: String,
 }
 
-// The login route can return 2 possible success responses.
-// This enum models each response!
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
 pub enum LoginResponse {
@@ -118,7 +112,6 @@ pub enum LoginResponse {
     TwoFactorAuth(TwoFactorAuthResponse),
 }
 
-// If a user requires 2FA, this JSON body should be returned!
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TwoFactorAuthResponse {
     pub message: String,
