@@ -28,10 +28,10 @@ pub enum GenerateTokenError {
     UnexpectedError,
 }
 
-pub const TOKEN_TTL_SECONDS: i64 = 600;
+pub const TOKEN_TTL_SECONDS: u32 = 600;
 
 fn generate_auth_token(email: &Email) -> Result<String, GenerateTokenError> {
-    let delta = chrono::Duration::try_seconds(TOKEN_TTL_SECONDS)
+    let delta = chrono::Duration::try_seconds(TOKEN_TTL_SECONDS.into())
         .ok_or(GenerateTokenError::UnexpectedError)?;
 
     let exp = Utc::now()
