@@ -5,7 +5,7 @@ use auth_service::{
 
 #[tokio::test]
 async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -34,11 +34,13 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
         .expect("No auth cookie found");
 
     assert!(!auth_cookie.value().is_empty());
+
+    app.cleanup().await;
 }
 
 #[tokio::test]
 async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -74,13 +76,16 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
         .get_code(&Email::parse(random_email).unwrap())
         .await
         .expect("Failed to get 2FA code");
-
+    
     assert_eq!(code_tuple.0.as_ref(), json_body.login_attempt_id);
+    
+    drop(two_fa_code_store);
+    app.cleanup().await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -125,11 +130,13 @@ async fn should_return_400_if_invalid_input() {
             "Invalid credentials".to_owned()
         );
     }
+
+    app.cleanup().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_incorrect_credentials() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -172,11 +179,13 @@ async fn should_return_401_if_incorrect_credentials() {
             "Incorrect credentials".to_owned()
         );
     }
+
+    app.cleanup().await;
 }
 
 #[tokio::test]
 async fn should_return_422_if_malformed_credentials() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
 
@@ -210,4 +219,6 @@ async fn should_return_422_if_malformed_credentials() {
             test_case
         );
     }
+
+    app.cleanup().await;
 }
