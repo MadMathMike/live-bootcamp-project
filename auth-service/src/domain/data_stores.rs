@@ -88,7 +88,7 @@ impl TwoFACode {
 
 impl Default for TwoFACode {
     fn default() -> Self {
-        TwoFACode(format!("{:06}", rand::rng().random_range(000000..1000000)))
+        TwoFACode(format!("{:06}", rand::thread_rng().gen_range(000000..1000000)))
     }
 }
 
