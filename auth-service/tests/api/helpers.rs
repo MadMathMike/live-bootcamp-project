@@ -5,8 +5,8 @@ use tokio::sync::RwLock;
 use auth_service::{
     app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType},
     services::{
-        hashmap_two_fa_code_store::HashmapTwoFACodeStore, hashmap_user_store::HashmapUserStore,
-        hashset_banned_token_store::HashsetBannedTokenStore, mock_email_client::MockEmailClient,
+        datastores::HashmapTwoFACodeStore, datastores::HashmapUserStore,
+        datastores::HashsetBannedTokenStore, mock_email_client::MockEmailClient,
     },
     utils::constants::test,
     Application,
