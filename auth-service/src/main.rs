@@ -4,7 +4,7 @@ use tokio::sync::RwLock;
 
 use auth_service::{
     app_state::AppState, get_postgres_pool, get_redis_client, services::{
-        datastores::{
+        data_stores::{
             PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore,
         },
         mock_email_client::MockEmailClient,

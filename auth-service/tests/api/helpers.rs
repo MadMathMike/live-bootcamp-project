@@ -10,7 +10,7 @@ use auth_service::{
     app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType},
     get_redis_client,
     services::{
-        datastores::{PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore},
+        data_stores::{PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore},
         mock_email_client::MockEmailClient,
     },
     utils::constants::{test, DATABASE_URL, REDIS_HOST_NAME},
