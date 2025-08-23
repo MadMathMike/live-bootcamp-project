@@ -1,3 +1,5 @@
+use color_eyre::eyre::{Result};
+
 use validator::validate_email;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
