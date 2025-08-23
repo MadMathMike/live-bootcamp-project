@@ -44,7 +44,7 @@ async fn should_return_200_valid_token() {
 
     assert_eq!(response.status().as_u16(), 200);
 
-    app.cleanup().await;
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -72,7 +72,7 @@ async fn should_return_401_if_invalid_token() {
         );
     }
 
-    app.cleanup().await;
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -132,7 +132,7 @@ async fn should_return_401_if_banned_token() {
         "Invalid auth token".to_owned()
     );
 
-    app.cleanup().await;
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -151,5 +151,5 @@ async fn should_return_422_if_malformed_input() {
         assert_eq!(response.status().as_u16(), 422);
     }
 
-    app.cleanup().await;
+    app.clean_up().await;
 }

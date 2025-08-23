@@ -27,23 +27,36 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
         login_attempt_id: LoginAttemptId,
         code: TwoFACode,
     ) -> Result<(), TwoFACodeStoreError> {
-        let json_str = serde_json::to_string(&(login_attempt_id, code))
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
-        self.conn
+        let key = get_key(&email);
+
+        let data = TwoFATuple(
+            login_attempt_id.as_ref().to_owned(),
+            code.as_ref().to_owned(),
+        );
+        let serialized_data =
+            serde_json::to_string(&data).map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+
+        let _: () = self
+            .conn
             .write()
             .await
-            .set_ex(get_key(&email), json_str, TEN_MINUTES_IN_SECONDS)
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)
-            .map(Ok)?
+            .set_ex(&key, serialized_data, TEN_MINUTES_IN_SECONDS)
+            .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+
+        Ok(())
     }
 
     async fn remove_code(&mut self, email: &Email) -> Result<(), TwoFACodeStoreError> {
-        self.conn
+        let key = get_key(email);
+
+        let _: () = self
+            .conn
             .write()
             .await
-            .del(get_key(email))
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)
-            .map(Ok)?
+            .del(&key)
+            .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+
+        Ok(())
     }
 
     async fn get_code(
@@ -51,14 +64,22 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
         email: &Email,
     ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError> {
         let key = get_key(email);
-        let tuple_str = self
-            .conn
-            .write()
-            .await
-            .get::<_, String>(key)
-            .map_err(|_| TwoFACodeStoreError::LoginAttemptIdNotFound)?;
-        Ok(serde_json::from_str::<(LoginAttemptId, TwoFACode)>(&tuple_str)
-            .map_err(|_| TwoFACodeStoreError::UnexpectedError)?)
+
+        match self.conn.write().await.get::<_, String>(&key) {
+            Ok(value) => {
+                let data: TwoFATuple = serde_json::from_str(&value)
+                    .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+
+                let login_attempt_id = LoginAttemptId::parse(data.0)
+                    .map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+
+                let email_code =
+                    TwoFACode::parse(data.1).map_err(|_| TwoFACodeStoreError::UnexpectedError)?;
+
+                Ok((login_attempt_id, email_code))
+            }
+            Err(_) => Err(TwoFACodeStoreError::LoginAttemptIdNotFound),
+        }
     }
 }
 

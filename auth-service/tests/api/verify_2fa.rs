@@ -69,7 +69,7 @@ async fn should_return_200_if_correct_code() {
 
     assert!(!auth_cookie.value().is_empty());
 
-    app.cleanup().await;
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -125,7 +125,7 @@ async fn should_return_400_if_invalid_input() {
         );
     }
 
-    app.cleanup().await;
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -225,7 +225,7 @@ async fn should_return_401_if_incorrect_credentials() {
         );
     }
 
-    app.cleanup().await;
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -293,7 +293,7 @@ async fn should_return_401_if_old_code() {
 
     assert_eq!(response.status().as_u16(), 401);
 
-    app.cleanup().await;
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -362,7 +362,7 @@ async fn should_return_401_if_same_code_twice() {
 
     assert_eq!(response.status().as_u16(), 401);
 
-    app.cleanup().await;
+    app.clean_up().await;
 }
 
 #[tokio::test]
@@ -408,5 +408,5 @@ async fn should_return_422_if_malformed_input() {
         );
     }
 
-    app.cleanup().await;
+    app.clean_up().await;
 }

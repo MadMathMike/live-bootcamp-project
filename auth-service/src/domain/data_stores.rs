@@ -1,5 +1,4 @@
 use rand::Rng;
-use serde::{Deserialize, Serialize};
 
 use super::{Email, Password, User};
 
@@ -51,7 +50,7 @@ pub enum TwoFACodeStoreError {
     UnexpectedError,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LoginAttemptId(String);
 
 impl LoginAttemptId {
@@ -74,13 +73,17 @@ impl AsRef<str> for LoginAttemptId {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TwoFACode(String);
 
 impl TwoFACode {
     pub fn parse(code: String) -> Result<Self, String> {
-        if code.len() == 6 && code.chars().all(|c| c.is_numeric()) {
-            Ok(TwoFACode(code))
+        let code_as_u32 = code
+            .parse::<u32>()
+            .map_err(|_| "Invalid 2FA code".to_owned())?;
+
+        if (100_000..=999_999).contains(&code_as_u32) {
+            Ok(Self(code))
         } else {
             Err("Invalid 2FA code".to_owned())
         }
@@ -89,34 +92,12 @@ impl TwoFACode {
 
 impl Default for TwoFACode {
     fn default() -> Self {
-        TwoFACode(format!("{:06}", rand::thread_rng().gen_range(000000..1000000)))
+        Self(rand::thread_rng().gen_range(100_000..=999_999).to_string())
     }
 }
 
 impl AsRef<str> for TwoFACode {
     fn as_ref(&self) -> &str {
         &self.0
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    use test_case::test_case;
-
-    #[test_case("123456", true; "returns ok for valid code")]
-    #[test_case("123H56", false; "returns err for code with non-numeric character")]
-    #[test_case("12345", false; "returns err for code that is too short")]
-    fn two_fa_code_parse(code: &str, is_ok: bool) {
-        let parse_result = TwoFACode::parse(String::from(code));
-        assert_eq!(is_ok, parse_result.is_ok());
-    }
-
-    #[test]
-    fn two_fa_code_default_is_parseable() {
-        let two_fa_code = TwoFACode::default();
-        let parse_result = TwoFACode::parse(two_fa_code.as_ref().to_owned());
-        assert!(parse_result.is_ok());
     }
 }

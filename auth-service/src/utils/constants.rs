@@ -19,11 +19,7 @@ fn set_token() -> String {
 
 fn set_db_url() -> String {
     dotenv().ok();
-    let url = std_env::var(env::DATABASE_URL_ENV_VAR).expect("DATABASE_URL must be set.");
-    if url.is_empty() {
-        panic!("DATABASE_URL must not be empty.");
-    }
-    url
+    std_env::var(env::DATABASE_URL_ENV_VAR).expect("DATABASE_URL must be set.")
 }
 
 fn set_redis_host() -> String {
