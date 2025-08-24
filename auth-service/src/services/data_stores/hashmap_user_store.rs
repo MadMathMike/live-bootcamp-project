@@ -1,4 +1,3 @@
-use secrecy::{Secret};
 use std::collections::HashMap;
 
 use crate::domain::{Email, Password, User, UserStore, UserStoreError};
@@ -45,6 +44,7 @@ impl UserStore for HashmapUserStore {
 
 #[cfg(test)]
 mod tests {
+    use secrecy::{Secret};
     use super::*;
 
     #[tokio::test]
