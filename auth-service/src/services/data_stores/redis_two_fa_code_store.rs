@@ -1,5 +1,6 @@
 use color_eyre::eyre::Context;
 use redis::{Commands, Connection};
+use secrecy::Secret;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -81,7 +82,7 @@ impl TwoFACodeStore for RedisTwoFACodeStore {
                     LoginAttemptId::parse(data.0).map_err(TwoFACodeStoreError::UnexpectedError)?;
 
                 let email_code =
-                    TwoFACode::parse(data.1).map_err(TwoFACodeStoreError::UnexpectedError)?;
+                    TwoFACode::parse(Secret::new(data.1)).map_err(TwoFACodeStoreError::UnexpectedError)?;
 
                 Ok((login_attempt_id, email_code))
             }

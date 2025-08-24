@@ -1,5 +1,6 @@
 use color_eyre::eyre::{eyre, Context, Report, Result};
 use rand::Rng;
+use secrecy::{ExposeSecret, Secret};
 use thiserror::Error;
 
 use super::{Email, Password, User};
@@ -103,12 +104,19 @@ impl AsRef<str> for LoginAttemptId {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct TwoFACode(String);
+#[derive(Clone, Debug)]
+pub struct TwoFACode(Secret<String>);
+
+impl PartialEq for TwoFACode {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.expose_secret() == other.0.expose_secret()
+    }
+}
 
 impl TwoFACode {
-    pub fn parse(code: String) -> Result<Self> {
+    pub fn parse(code: Secret<String>) -> Result<Self> {
         let code_as_u32 = code
+            .expose_secret()
             .parse::<u32>()
             .wrap_err("Invalid 2FA code")?;
 
@@ -122,12 +130,13 @@ impl TwoFACode {
 
 impl Default for TwoFACode {
     fn default() -> Self {
-        Self(rand::thread_rng().gen_range(100_000..=999_999).to_string())
+        Self(Secret::new(rand::thread_rng().gen_range(100_000..=999_999).to_string()))
     }
 }
 
+// TODO: how should this be safely exposed? As ref is exposing the secret, but that isn't obvious to the caller
 impl AsRef<str> for TwoFACode {
     fn as_ref(&self) -> &str {
-        &self.0
+        &self.0.expose_secret()
     }
 }

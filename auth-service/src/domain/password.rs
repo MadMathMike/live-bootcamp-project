@@ -1,24 +1,33 @@
-use color_eyre::eyre::{Result};
+use color_eyre::eyre::{eyre, Result};
+use secrecy::{ExposeSecret, Secret};
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct Password(String);
+#[derive(Debug, Clone)] // Updated!
+pub struct Password(Secret<String>); // Updated!
+
+impl PartialEq for Password { // New!
+    fn eq(&self, other: &Self) -> bool {
+        // We can use the expose_secret method to expose the secret in a
+        // controlled manner when needed!
+        self.0.expose_secret() == other.0.expose_secret() // Updated!
+    }
+}
 
 impl Password {
-    pub fn parse(s: String) -> Result<Password, String> {
+    pub fn parse(s: Secret<String>) -> Result<Password> { // Updated!
         if validate_password(&s) {
             Ok(Self(s))
         } else {
-            Err("Failed to parse string to a Password type".to_owned())
+            Err(eyre!("Failed to parse string to a Password type"))
         }
     }
 }
 
-fn validate_password(s: &str) -> bool {
-    s.len() >= 8
+fn validate_password(s: &Secret<String>) -> bool { // Updated!
+    s.expose_secret().len() >= 8
 }
 
-impl AsRef<str> for Password {
-    fn as_ref(&self) -> &str {
+impl AsRef<Secret<String>> for Password { // Updated!
+    fn as_ref(&self) -> &Secret<String> {
         &self.0
     }
 }
@@ -29,25 +38,26 @@ mod tests {
 
     use fake::faker::internet::en::Password as FakePassword;
     use fake::Fake;
+    use secrecy::Secret; // New!
 
     #[test]
     fn empty_string_is_rejected() {
-        let password = "".to_owned();
+        let password = Secret::new("".to_string()); // Updated!
         assert!(Password::parse(password).is_err());
     }
     #[test]
     fn string_less_than_8_characters_is_rejected() {
-        let password = "1234567".to_owned();
+        let password = Secret::new("1234567".to_string()); // Updated!
         assert!(Password::parse(password).is_err());
     }
 
     #[derive(Debug, Clone)]
-    struct ValidPasswordFixture(pub String);
+    struct ValidPasswordFixture(pub Secret<String>); // Updated!
 
     impl quickcheck::Arbitrary for ValidPasswordFixture {
         fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
             let password = FakePassword(8..30).fake_with_rng(g);
-            Self(password)
+            Self(Secret::new(password)) // Updated!
         }
     }
     #[quickcheck_macros::quickcheck]
